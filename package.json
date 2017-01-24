@@ -1,0 +1,27 @@
+{
+  "name": "virtualcontent",
+  "version": "1.0.0",
+  "description": "VirtualContent is a JS tool with lazy render abilities.",
+  "main": "src/virtual_content.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ReinarKein/virtualcontent.git"
+  },
+  "keywords": [
+    "javascript",
+    "js",
+    "content",
+    "render",
+    "virtual",
+    "scroll"
+  ],
+  "author": "Valentin Krepkiy",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/ReinarKein/virtualcontent/issues"
+  },
+  "homepage": "https://github.com/ReinarKein/virtualcontent#readme"
+}
