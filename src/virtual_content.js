@@ -9,7 +9,9 @@
 
   const ONSCROLL_TIMEOUT    = 200;
   const DEFAULT_CHUNK_SIZE  = 10240;
-  const DEFAULT_TRESHOLD    = 2;
+  const DEFAULT_THRESHOLD   = 2;
+
+  const NO_WORD_SPLIT       = false;
   const MAX_WORD_SIZE       = 100;
 
   /**
@@ -27,7 +29,8 @@
     constructor (options = {}) {
       this._chunkLenght = options.length || DEFAULT_CHUNK_SIZE;
       this._mode        = options.append ? APPEND_MODE : REPLACE_MODE;
-      this._treshold    = options.treshold || DEFAULT_TRESHOLD;
+      this._noWordSplit = options.noWordSplit || NO_WORD_SPLIT;
+      this._threshold   = options.threshold || DEFAULT_THRESHOLD;
       this._type        = options.type || TEXT_TYPE;
 
       this._chunks      = [];
@@ -40,7 +43,7 @@
       this._pointer     = 0;
       this._visibles    = [];
 
-      this._el.setAttribute("style", "height:100%;overflow:auto;position:relative;");
+      this._el.setAttribute("style", "height:100%;overflow:auto;position:relative;outline:0px;word-break:break-word;");
       this._el.setAttribute("tabindex", 0);
 
       this._startScrollTracking();
@@ -62,6 +65,13 @@
       var parentNode = this._el.parentNode;
 
       this._stopScrollTracking();
+
+      this._el.innerHTML  = null;
+      this._chunks        = null;
+      this._heights       = null;
+      this._visibles      = null;
+      this._leftpads      = null;
+
 
       if (parentNode) {
         parentNode.removeChild(this._el);
@@ -135,6 +145,12 @@
       return limit - 1;
     }
 
+    _getLastVisible () {
+      var length = this._visibles.length;
+
+      return length ? this._visibles[--length] : -1;
+    }
+
     _needUpdate (chunkIndex, prevPointer) {
       var limit, visibles;
 
@@ -143,7 +159,7 @@
       }
 
       visibles  = this._visibles;
-      limit     = Math.min(chunkIndex + this._treshold, this._chunks.length);
+      limit     = Math.min(chunkIndex + this._threshold, this._chunks.length);
 
       for ( ; chunkIndex < limit; chunkIndex++) {
         if (visibles.indexOf(chunkIndex) === -1) {
@@ -221,7 +237,11 @@
 
     setText (str) {
       this._type    = TEXT_TYPE;
-      this._chunks  = this._splitText(str, this._chunkLenght);
+      if (this._noWordSplit) {
+        this._chunks  = this._splitText(str, this._chunkLenght);
+      } else {
+        this._chunks  = this._splitString(str, this._chunkLenght);
+      }
 
       this._pointer   = 0;
       this._heights   = [];
@@ -324,10 +344,10 @@
     }
 
     _updateContentWithAppend (pointer = 0, prevPointer = 0) {
-      var treshold    = this._treshold;
+      var threshold   = this._threshold;
       var el          = this._el;
-      var first       = Math.max(this._visibles.length, prevPointer + treshold);
-      var last        = Math.min(pointer + treshold, this._chunks.length);
+      var first       = this._getLastVisible() + 1 || 0;
+      var last        = Math.min(pointer + threshold, this._chunks.length);
       var offsets     = this._offsets;
 
       for (let i = first; i < last; i++) {
@@ -347,10 +367,10 @@
     _updateContentWithReplace (pointer = 0, prevPointer = 0) {
       this._stopScrollTracking();
 
-      var treshold      = this._treshold;
+      var threshold     = this._threshold;
       var scrollTop     = this._el.scrollTop;
-      var startOffset   = Math.max(0, pointer - treshold);
-      var endOffset     = Math.min(this._chunks.length, pointer + treshold);
+      var startOffset   = Math.max(0, pointer - threshold);
+      var endOffset     = Math.min(this._chunks.length, pointer + threshold);
       var offsetLeft    = this._getChunkLeftPad(startOffset);
 
       var preFillerHeight   = this._getChunkOffsetTop(startOffset);
