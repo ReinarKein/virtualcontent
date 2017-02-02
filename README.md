@@ -4,20 +4,22 @@
 
 ## Usage
 ```javascript
-var vc = new VC(options);
-
-vc.setText(str).renderTo($container);
+VC.create(options).setText(str).renderTo($container);
 ```
 
 ## Options
-- append
-- length
+- append (Bool)
+- chunkPreProcessor (Function)
+- length (Number)
 
 
 ## API
 <table>
     <tr>
     	<th>Method</th><th>Arguments</th><th>Returns</th><th>Description</th>
+    </tr>
+    <tr>
+    	<td>create <sup>(static)</sup></td><td>none</td><td>self</td><td>Destroy VC instance</td>
     </tr>
     <tr>
     	<td>destroy</td><td>none</td><td>self</td><td>Destroy VC instance</td>
@@ -29,7 +31,6 @@ vc.setText(str).renderTo($container);
     	<td>setHtml</td><td>String</td><td>self</td><td>Set HTML content</td>
     </tr>
     <tr>
-    	<td>setTextl</td><td>String</td><td>self</td><td>Set text content</td>
+    	<td>setText</td><td>String</td><td>self</td><td>Set text content</td>
     </tr>
-
 </table>

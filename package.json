@@ -1,6 +1,6 @@
 {
   "name": "virtualcontent",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A JS browser tool designed for handling large text/html content",
   "main": "src/virtual_content.js",
   "scripts": {
@@ -18,7 +18,7 @@
     "virtual",
     "scroll"
   ],
-  "author": "Valentin Krepkiy",
+  "author": "Valentin Krepkiy <valkrepkiy@gmail.com>",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/vkrepkiy/virtualcontent/issues"

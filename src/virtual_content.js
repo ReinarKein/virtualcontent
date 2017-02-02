@@ -1,7 +1,6 @@
 "use strict";
 
 (function () {
-
   const HTML_TYPE           = "html";
   const TEXT_TYPE           = "text";
   const REPLACE_MODE        = "replace";
@@ -13,6 +12,8 @@
 
   const NO_WORD_SPLIT       = false;
   const MAX_WORD_SIZE       = 100;
+
+  const CHUNK_PREPROCESSOR  = null;
 
   /**
    * @class VirtualContent
@@ -27,11 +28,12 @@
   class VirtualContent {
 
     constructor (options = {}) {
-      this._chunkLenght = options.length || DEFAULT_CHUNK_SIZE;
-      this._mode        = options.append ? APPEND_MODE : REPLACE_MODE;
-      this._noWordSplit = options.noWordSplit || NO_WORD_SPLIT;
-      this._threshold   = options.threshold || DEFAULT_THRESHOLD;
-      this._type        = options.type || TEXT_TYPE;
+      this._chunkLenght       = options.length || DEFAULT_CHUNK_SIZE;
+      this._mode              = options.append ? APPEND_MODE : REPLACE_MODE;
+      this._noWordSplit       = options.noWordSplit || NO_WORD_SPLIT;
+      this._threshold         = options.threshold || DEFAULT_THRESHOLD;
+      this._type              = options.type || TEXT_TYPE;
+      this._chunkPreProcessor = options.chunkPreProcessor || CHUNK_PREPROCESSOR;
 
       this._chunks      = [];
       this._el          = document.createElement("div");
@@ -51,6 +53,10 @@
       if (VirtualContent._trackInstances) {
         this._trackInstance();
       }
+    }
+
+    static create (options) {
+      return new VirtualContent(options);
     }
 
     _addFillerTo (parent, height = 0) {
@@ -184,6 +190,14 @@
       }
 
       this._updateContent(curPointer, prevPointer);
+    }
+
+    _preprocessChunk (chunkContent) {
+      if (this._chunkPreProcessor) {
+        chunkContent = this._chunkPreProcessor(chunkContent);
+      }
+
+      return chunkContent;
     }
 
     // TODO: write _recalculate method or add some restrictions
@@ -354,7 +368,7 @@
         let chunkEl = document.createElement("span");
 
         chunkEl.dataset.chunkIndex  = i;
-        chunkEl.innerHTML           = this._chunks[i];
+        chunkEl.innerHTML           = this._preprocessChunk(this._chunks[i]);
 
         this._el.appendChild(chunkEl);
 
@@ -385,6 +399,8 @@
         var chunkEl     = document.createElement("span");
         var chunkIndex  = chunkEl.dataset.chunkIndex = startOffset + i;
         var leftPad     = (!i && this._getChunkLeftPad(chunkIndex)) || 0;
+
+        content         = this._preprocessChunk(content);
 
         chunkEl.setAttribute("style", "position:relative;");
 
@@ -488,12 +504,13 @@
     };
   }
 
+
   if (typeof module === "object" && typeof module.exports === "object") {
-  	module.exports = VirtualContent;
+    module.exports = VirtualContent;
   } else if (typeof define === "function" && define.amd) {
-  	define(VirtualContent);
+    define(VirtualContent);
   }
   if (typeof window !== "undefined") {
-  	window.VC = VirtualContent;
+    window.VC = VirtualContent;
   }
 })();
