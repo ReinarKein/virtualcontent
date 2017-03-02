@@ -35,15 +35,16 @@
       this._type              = options.type || TEXT_TYPE;
       this._chunkPreProcessor = options.chunkPreProcessor || CHUNK_PREPROCESSOR;
 
-      this._chunks      = [];
-      this._el          = document.createElement("div");
-      this._heights     = [];
-      this._lastWidth   = null;
-      this._leftpads    = [];
-      this._offsets     = [];
-      this._onScroll    = throttle(this._onScroll.bind(this), ONSCROLL_TIMEOUT);
-      this._pointer     = 0;
-      this._visibles    = [];
+      this._chunks          = [];
+      this._el              = document.createElement("div");
+      this._heights         = [];
+      this._lastWidth       = null;
+      this._leftpads        = [];
+      this._offsets         = [];
+      this._onScroll        = throttle(this._onScroll.bind(this), ONSCROLL_TIMEOUT);
+      this._pointer         = 0;
+      this._prevScrollTop   = 0;
+      this._visibles        = [];
 
       this._el.setAttribute("style", "height:100%;overflow:auto;position:relative;outline:0px;word-break:break-word;");
       this._el.setAttribute("tabindex", 0);
@@ -91,7 +92,6 @@
       return this;
     }
 
-    // TODO: fix incorrect calculations
     _getBottomFillerHeightFor (chunkIndex) {
       var heights = this._heights.slice(chunkIndex, this._chunks.length);
 
@@ -138,17 +138,42 @@
       }, 0);
     }
 
+    _getChunkRangeForReplacement (pointer) {
+      var min         = 0;
+      var max         = this._chunks.length;
+
+      var treshold    = this._threshold;
+      var startOffset = pointer - treshold;
+      var endOffset   = pointer + treshold;
+
+      if (startOffset < min && endOffset > max) {
+        return [min, max];
+      }
+
+      if (startOffset < min) {
+        endOffset += Math.abs(min - startOffset);
+        startOffset = min;
+      }
+
+      if (endOffset > max) {
+        startOffset = startOffset - endOffset + max;
+        endOffset = max;
+      }
+
+      return [Math.max(startOffset, min), Math.min(endOffset, max)];
+    }
+
     _getCurrentPointer () {
       var scrollTop = this._el.scrollTop;
       var limit     = this._chunks.length;
 
       for (let i = 0; i<limit; i++) {
         if (this._getChunkOffsetTop(i) > scrollTop) {
-          return i;
+          return --i;
         }
       }
 
-      return limit - 1;
+      return this._visibles[this._visibles.length - 1] + 1;
     }
 
     _getLastVisible () {
@@ -157,18 +182,22 @@
       return length ? this._visibles[--length] : -1;
     }
 
-    _needUpdate (chunkIndex, prevPointer) {
+    _getScrollTop () {
+      return this._el.scrollTop;
+    }
+
+    _needUpdate (prevPointer, nextPointer) {
       var limit, visibles;
 
       if (this._mode === REPLACE_MODE) {
-        return chunkIndex !== prevPointer;
+        return nextPointer !== prevPointer;
       }
 
       visibles  = this._visibles;
-      limit     = Math.min(chunkIndex + this._threshold, this._chunks.length);
+      limit     = Math.min(nextPointer + this._threshold, this._chunks.length);
 
-      for ( ; chunkIndex < limit; chunkIndex++) {
-        if (visibles.indexOf(chunkIndex) === -1) {
+      for ( ; nextPointer < limit; nextPointer++) {
+        if (visibles.indexOf(nextPointer) === -1) {
           return true;
         }
       }
@@ -176,20 +205,21 @@
       return false;
     }
 
-    // TODO: Fix glitches on fast scroll or restrict delta to 1
     _onScroll (e) {
       var prevPointer = this._pointer;
-      var curPointer  = this._pointer = this._getCurrentPointer();
+      var nextPointer = this._pointer = this._getCurrentPointer();
 
       if (this._widthHasChanged()) {
         this._recalculate();
       }
 
-      if (!this._needUpdate(curPointer, prevPointer)) {
+      if (!this._needUpdate(prevPointer, nextPointer)) {
         return;
       }
 
-      this._updateContent(curPointer, prevPointer);
+      this._stopScrollTracking();
+      this._updateContent(prevPointer, nextPointer);
+      this._startScrollTracking();
     }
 
     _preprocessChunk (chunkContent) {
@@ -245,8 +275,9 @@
       return this;
     }
 
-    _setScrollTop (num) {
-      this._el.scrollTop = num;
+    _setScrollTop (newValue) {
+      this._prevScrollTop = this._el.scrollTop;
+      this._el.scrollTop  = newValue;
     }
 
     setText (str) {
@@ -314,11 +345,13 @@
     }
 
     _startScrollTracking () {
+      this._el.setAttribute("overflow", "auto");
       this._el.addEventListener("scroll", this._onScroll);
     }
 
     _stopScrollTracking () {
       this._el.removeEventListener("scroll", this._onScroll);
+      this._el.setAttribute("overflow", "hidden");
     }
 
     _storeChunkData (chunkIndex, extras = {}) {
@@ -357,7 +390,7 @@
       }
     }
 
-    _updateContentWithAppend (pointer = 0, prevPointer = 0) {
+    _updateContentWithAppend (prevPointer = 0, pointer = 0) {
       var threshold   = this._threshold;
       var el          = this._el;
       var first       = this._getLastVisible() + 1 || 0;
@@ -378,14 +411,10 @@
       }
     }
 
-    _updateContentWithReplace (pointer = 0, prevPointer = 0) {
-      this._stopScrollTracking();
-
-      var threshold     = this._threshold;
-      var scrollTop     = this._el.scrollTop;
-      var startOffset   = Math.max(0, pointer - threshold);
-      var endOffset     = Math.min(this._chunks.length, pointer + threshold);
-      var offsetLeft    = this._getChunkLeftPad(startOffset);
+    _updateContentWithReplace (prevPointer = 0, pointer = 0) {
+      var threshold                 = this._threshold;
+      var scrollTop                 = this._getScrollTop();
+      var [startOffset, endOffset]  = this._getChunkRangeForReplacement(pointer);
 
       var preFillerHeight   = this._getChunkOffsetTop(startOffset);
       var postFillerHeight  = this._getBottomFillerHeightFor(endOffset);
@@ -402,7 +431,7 @@
 
         content         = this._preprocessChunk(content);
 
-        chunkEl.setAttribute("style", "position:relative;");
+        chunkEl.setAttribute("style", "position:relative; display:inline-block;");
 
         chunkEl.innerHTML = `
           <span data-chunk-role="start" style="display:inline-block;padding-left:${leftPad}px;"></span>
@@ -424,8 +453,6 @@
 
       this._setScrollTop(scrollTop);
       this._el.focus();
-
-      this._startScrollTracking();
     }
 
     _widthHasChanged () {
