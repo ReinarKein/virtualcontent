@@ -10,10 +10,9 @@
   const DEFAULT_CHUNK_SIZE  = 10240;
   const DEFAULT_THRESHOLD   = 2;
 
-  const NO_WORD_SPLIT       = false;
-  const MAX_WORD_SIZE       = 100;
-
   const CHUNK_PREPROCESSOR  = null;
+
+  const CHUNK_ATTR_START  = "data-chunk-role='start'";
 
   /**
    * @class VirtualContent
@@ -30,7 +29,6 @@
     constructor (options = {}) {
       this._chunkLenght       = options.length || DEFAULT_CHUNK_SIZE;
       this._mode              = options.append ? APPEND_MODE : REPLACE_MODE;
-      this._noWordSplit       = options.noWordSplit || NO_WORD_SPLIT;
       this._threshold         = options.threshold || DEFAULT_THRESHOLD;
       this._type              = options.type || TEXT_TYPE;
       this._chunkPreProcessor = options.chunkPreProcessor || CHUNK_PREPROCESSOR;
@@ -43,11 +41,15 @@
       this._offsets         = [];
       this._onScroll        = throttle(this._onScroll.bind(this), ONSCROLL_TIMEOUT);
       this._pointer         = 0;
+      this._prevOffsetToScrollableEl = 0;
       this._prevScrollTop   = 0;
+      this._scrollableEl    = getDomElement(options.scrollable) || this._el;
       this._visibles        = [];
 
-      this._el.setAttribute("style", "height:100%;overflow:auto;position:relative;outline:0px;word-break:break-word;");
-      this._el.setAttribute("tabindex", 0);
+      this._el.setAttribute("style", "height:100%;overflow:auto;position:relative;word-break:break-word;");
+      this._scrollableEl.setAttribute("tabindex", 0);
+
+      this._scrollableEl.style.outline = "0px";
 
       this._startScrollTracking();
 
@@ -68,6 +70,16 @@
       parent.appendChild(el);
     }
 
+    _calculateChunkDataForReplacement (chunkEl) {
+      var chunkData = {
+        leftPad       : chunkEl.querySelector(`[${CHUNK_ATTR_START}]`).offsetLeft,
+        offsetHeight  : chunkEl.offsetHeight,
+        offsetTop     : chunkEl.offsetTop
+      };
+
+      return chunkData;
+    }
+
     destroy () {
       var parentNode = this._el.parentNode;
 
@@ -78,6 +90,7 @@
       this._heights       = null;
       this._visibles      = null;
       this._leftpads      = null;
+      this._scrollableEl  = null;
 
 
       if (parentNode) {
@@ -164,7 +177,7 @@
     }
 
     _getCurrentPointer () {
-      var scrollTop = this._el.scrollTop;
+      var scrollTop = this._getScrollTopForChunks();
       var limit     = this._chunks.length;
 
       for (let i = 0; i<limit; i++) {
@@ -182,8 +195,16 @@
       return length ? this._visibles[--length] : -1;
     }
 
+    _getOffsetToScrollableEl () {
+      return (this._el.getBoundingClientRect().top + this._scrollableEl.scrollTop) - this._scrollableEl.getBoundingClientRect().top;
+    }
+
     _getScrollTop () {
-      return this._el.scrollTop;
+      return this._scrollableEl.scrollTop;
+    }
+
+    _getScrollTopForChunks () {
+      return this._getScrollTop() - this._getOffsetToScrollableEl();
     }
 
     _needUpdate (prevPointer, nextPointer) {
@@ -253,40 +274,29 @@
       return this;
     }
 
+    _scrollableOffsetHasChanged () {
+      return this._prevOffsetToScrollableEl !== this._getOffsetToScrollableEl();
+    }
+
     _scrollToTop () {
-      this._el.scrollTop = 0;
+      this._scrollableEl.scrollTop = 0;
     }
 
     // TODO: write setHtml method
     setHtml (html) {
-      this._type    = HTML_TYPE;
-      this._chunks = [];
+      console.info(".setHtml() is not implemented yet, fall back to .setText()");
 
-      this._pointer   = 0;
-      this._heights   = [];
-      this._visibles  = [];
-
-      this._el.innerHTML = "";
-
-      this._scrollToTop();
-
-      console.info("Not yet");
-
-      return this;
+      return this.setText.apply(this, arguments);
     }
 
     _setScrollTop (newValue) {
-      this._prevScrollTop = this._el.scrollTop;
-      this._el.scrollTop  = newValue;
+      this._prevScrollTop = this._scrollableEl.scrollTop;
+      this._scrollableEl.scrollTop  = newValue;
     }
 
     setText (str) {
       this._type    = TEXT_TYPE;
-      if (this._noWordSplit) {
-        this._chunks  = this._splitText(str, this._chunkLenght);
-      } else {
-        this._chunks  = this._splitString(str, this._chunkLenght);
-      }
+      this._chunks  = this._splitString(str, this._chunkLenght);
 
       this._pointer   = 0;
       this._heights   = [];
@@ -312,46 +322,14 @@
       });
     }
 
-    _splitText (str, length) {
-      var chunks      = [];
-
-      var words = str.split(" ").reduce((result, val) => {
-        if (val.length > MAX_WORD_SIZE) {
-          return result.concat(this._splitString(val, MAX_WORD_SIZE));
-        }
-
-        result.push(`${val} `);
-
-        return result;
-      }, []);
-
-      var wordsLength = words.length;
-
-      words.reduce(function (result, val, i) {
-        if ((result + val).length > length) {
-          chunks.push(result);
-          result = "";
-        }
-
-        result += val;
-
-        if (i === wordsLength - 1) {
-          chunks.push(result);
-        }
-        return result;
-      }, "");
-
-      return chunks.concat();
-    }
-
     _startScrollTracking () {
-      this._el.setAttribute("overflow", "auto");
-      this._el.addEventListener("scroll", this._onScroll);
+      this._scrollableEl.setAttribute("overflow", "auto");
+      this._scrollableEl.addEventListener("scroll", this._onScroll);
     }
 
     _stopScrollTracking () {
-      this._el.removeEventListener("scroll", this._onScroll);
-      this._el.setAttribute("overflow", "hidden");
+      this._scrollableEl.removeEventListener("scroll", this._onScroll);
+      this._scrollableEl.setAttribute("overflow", "hidden");
     }
 
     _storeChunkData (chunkIndex, extras = {}) {
@@ -382,7 +360,25 @@
       VirtualContent.instances.push(this);
     }
 
+    _updateChunksDataWith (options = {}) {
+      var offsetDelta = options.offsetDelta || 0;
+
+      for (let i=0; i<this._offsets.length; i++) {
+        this._offsets[i] += offsetDelta;
+      }
+    }
+
     _updateContent () {
+      if (this._scrollableOffsetHasChanged()) {
+        let offsetToScrollableEl = this._getOffsetToScrollableEl();
+
+        this._updateChunksDataWith({
+          offsetDelta: offsetToScrollableEl - this._prevOffsetToScrollableEl
+        })
+
+        this._prevOffsetToScrollableEl = offsetToScrollableEl;
+      }
+
       if (this._mode === APPEND_MODE) {
         this._updateContentWithAppend.apply(this, arguments);
       } else {
@@ -392,7 +388,6 @@
 
     _updateContentWithAppend (prevPointer = 0, pointer = 0) {
       var threshold   = this._threshold;
-      var el          = this._el;
       var first       = this._getLastVisible() + 1 || 0;
       var last        = Math.min(pointer + threshold, this._chunks.length);
       var offsets     = this._offsets;
@@ -413,7 +408,6 @@
 
     _updateContentWithReplace (prevPointer = 0, pointer = 0) {
       var threshold                 = this._threshold;
-      var scrollTop                 = this._getScrollTop();
       var [startOffset, endOffset]  = this._getChunkRangeForReplacement(pointer);
 
       var preFillerHeight   = this._getChunkOffsetTop(startOffset);
@@ -434,25 +428,25 @@
         chunkEl.setAttribute("style", "position:relative; display:inline-block;");
 
         chunkEl.innerHTML = `
-          <span data-chunk-role="start" style="display:inline-block;padding-left:${leftPad}px;"></span>
+          <span ${CHUNK_ATTR_START} style="display:inline-block;padding-left:${leftPad}px;"></span>
           <span>${content}</span>
         `;
 
         this._el.appendChild(chunkEl);
 
-        this._storeChunkData(chunkIndex, {
-          leftPad       : chunkEl.querySelector("[data-chunk-role='start']").offsetLeft,
-          offsetHeight  : chunkEl.offsetHeight,
-          offsetTop     : chunkEl.offsetTop
-        });
+        this._storeChunkData(chunkIndex, this._calculateChunkDataForReplacement(chunkEl));
 
         this._visibles.push(chunkIndex);
       });
 
       this._addFillerTo(this._el, postFillerHeight);
 
-      this._setScrollTop(scrollTop);
-      this._el.focus();
+      this._updateScrollTop();
+      this._scrollableEl.focus();
+    }
+
+    _updateScrollTop () {
+      this._setScrollTop(this._scrollableEl.scrollTop);
     }
 
     _widthHasChanged () {
@@ -477,7 +471,7 @@
         if (!vc._widthHasChanged()) {
           return;
         }
-        vc._recalculateHeights();
+        vc._recalculate();
       });
     }, 500);
 
@@ -486,6 +480,22 @@
 
   function isJqueryEl (el) {
     return !!el.jquery;
+  }
+
+  function getDomElement (el) {
+    if (typeof el === "string") {
+      return document.querySelector(el);
+    }
+
+    if (el.constructor === HTMLElement) {
+      return el;
+    }
+
+    if (isJqueryEl(el)) {
+      return el[0];
+    }
+
+    return null;
   }
 
   function throttle (func, wait, options) {
