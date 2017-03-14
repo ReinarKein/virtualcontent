@@ -26,7 +26,13 @@ VC.create(options).setText(str).renderTo($container);
     	<td>chunkPreProcessor</td><td>Function</td><td>null</td><td>Set function which receives chunk (String) as a first argument, and returns String.</td>
     </tr>
     <tr>
+    	<td>delay</sup></td><td>Integer</td><td>100</td><td>Delay scroll processing.</td>
+    </tr>
+    <tr>
     	<td>length</td><td>Number</td><td>10240</td><td>Set maximum length for a chunk string</td>
+    </tr>
+    <tr>
+    	<td>scrollableParent</td><td>Node/jQueryEl/selector</td><td>undefined</td><td>Set scrollable parent node.</td>
     </tr>
     <tr>
       <td>threshold</td><td>Number</td><td>2</td><td>It defines how much chunks are shown at once in Replace mode (default)</td>

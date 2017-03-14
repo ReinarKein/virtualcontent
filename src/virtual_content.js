@@ -258,7 +258,11 @@
       this._stopScrollTracking();
       this._updateContent(prevPointer, nextPointer);
       this._scrollableEl.focus();
-      this._setScrollTop(scrollTop);
+
+      if (this._mode !== APPEND_MODE) {
+        this._setScrollTop(scrollTop);
+      }
+
       this._startScrollTracking();
     }
 
@@ -272,8 +276,6 @@
 
     // TODO: write _recalculate method or add some restrictions
     _recalculate () {
-      console.info("Size was changed.");
-
       this._storeWidth(this._el.offsetWidth);
     }
 
