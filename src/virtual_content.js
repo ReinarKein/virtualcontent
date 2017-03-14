@@ -6,13 +6,14 @@
   const REPLACE_MODE        = "replace";
   const APPEND_MODE         = "append";
 
-  const ONSCROLL_TIMEOUT    = 200;
+  const ONSCROLL_TIMEOUT    = 100;
   const DEFAULT_CHUNK_SIZE  = 10240;
   const DEFAULT_THRESHOLD   = 2;
 
   const CHUNK_PREPROCESSOR  = null;
 
   const CHUNK_ATTR_START  = "data-chunk-role='start'";
+
 
   /**
    * @class VirtualContent
@@ -23,7 +24,6 @@
    * @method setText
    *
    */
-
   class VirtualContent {
 
     constructor (options = {}) {
@@ -32,6 +32,7 @@
       this._threshold         = options.threshold || DEFAULT_THRESHOLD;
       this._type              = options.type || TEXT_TYPE;
       this._chunkPreProcessor = options.chunkPreProcessor || CHUNK_PREPROCESSOR;
+      this._renderDelay       = options.delay || ONSCROLL_TIMEOUT;
 
       this._chunks          = [];
       this._el              = document.createElement("div");
@@ -39,11 +40,10 @@
       this._lastWidth       = null;
       this._leftpads        = [];
       this._offsets         = [];
-      this._onScroll        = throttle(this._onScroll.bind(this), ONSCROLL_TIMEOUT);
+      this._onScroll        = delay(this._onScroll.bind(this), this._renderDelay);
       this._pointer         = 0;
       this._prevOffsetToScrollableEl = 0;
-      this._prevScrollTop   = 0;
-      this._scrollableEl    = getDomElement(options.scrollable) || this._el;
+      this._scrollableEl    = getDomElement(options.scrollableParent) || this._el;
       this._visibles        = [];
 
       this._el.setAttribute("style", "height:100%;overflow:auto;position:relative;word-break:break-word;");
@@ -70,7 +70,7 @@
       parent.appendChild(el);
     }
 
-    _calculateChunkDataForReplacement (chunkEl) {
+    _calculateChunkData (chunkEl) {
       var chunkData = {
         leftPad       : chunkEl.querySelector(`[${CHUNK_ATTR_START}]`).offsetLeft,
         offsetHeight  : chunkEl.offsetHeight,
@@ -119,6 +119,10 @@
 
     _getChunkElByIndex (i) {
       return this._el.querySelector(`[data-chunk-index='${i}']`);
+    }
+
+    _getChunkHeight (i) {
+      return this._heights[i] || 0;
     }
 
     _getChunkLeftPad (chunkIndex) {
@@ -177,16 +181,15 @@
     }
 
     _getCurrentPointer () {
-      var scrollTop = this._getScrollTopForChunks();
-      var limit     = this._chunks.length;
+      var limit = this._offsets.length || 0;
 
       for (let i = 0; i<limit; i++) {
-        if (this._getChunkOffsetTop(i) > scrollTop) {
+        if (this._getChunkOffsetTop(i) > this._getScrollTopForChunks()) {
           return --i;
         }
       }
 
-      return this._visibles[this._visibles.length - 1] + 1;
+      return this._offsets.length - 1;
     }
 
     _getLastVisible () {
@@ -196,6 +199,10 @@
     }
 
     _getOffsetToScrollableEl () {
+      if (this._el === this._scrollableEl) {
+        return 0;
+      }
+
       return (this._el.getBoundingClientRect().top + this._scrollableEl.scrollTop) - this._scrollableEl.getBoundingClientRect().top;
     }
 
@@ -211,7 +218,16 @@
       var limit, visibles;
 
       if (this._mode === REPLACE_MODE) {
-        return nextPointer !== prevPointer;
+        let prev, next;
+
+        if (prevPointer === nextPointer) {
+          return false;
+        }
+
+        prev = this._getChunkRangeForReplacement(prevPointer);
+        next = this._getChunkRangeForReplacement(nextPointer);
+
+        return (prev[0] !== next[0]) || (prev[1] !== next[1]);
       }
 
       visibles  = this._visibles;
@@ -227,6 +243,7 @@
     }
 
     _onScroll (e) {
+      var scrollTop   = this._getScrollTop();
       var prevPointer = this._pointer;
       var nextPointer = this._pointer = this._getCurrentPointer();
 
@@ -240,6 +257,8 @@
 
       this._stopScrollTracking();
       this._updateContent(prevPointer, nextPointer);
+      this._scrollableEl.focus();
+      this._setScrollTop(scrollTop);
       this._startScrollTracking();
     }
 
@@ -290,8 +309,7 @@
     }
 
     _setScrollTop (newValue) {
-      this._prevScrollTop = this._scrollableEl.scrollTop;
-      this._scrollableEl.scrollTop  = newValue;
+      this._scrollableEl.scrollTop = newValue;
     }
 
     setText (str) {
@@ -323,13 +341,13 @@
     }
 
     _startScrollTracking () {
-      this._scrollableEl.setAttribute("overflow", "auto");
+      this._scrollableEl.style.overflow = "auto";
       this._scrollableEl.addEventListener("scroll", this._onScroll);
     }
 
     _stopScrollTracking () {
       this._scrollableEl.removeEventListener("scroll", this._onScroll);
-      this._scrollableEl.setAttribute("overflow", "hidden");
+      this._scrollableEl.style.overflow = "hidden";
     }
 
     _storeChunkData (chunkIndex, extras = {}) {
@@ -369,15 +387,15 @@
     }
 
     _updateContent () {
-      if (this._scrollableOffsetHasChanged()) {
-        let offsetToScrollableEl = this._getOffsetToScrollableEl();
-
-        this._updateChunksDataWith({
-          offsetDelta: offsetToScrollableEl - this._prevOffsetToScrollableEl
-        })
-
-        this._prevOffsetToScrollableEl = offsetToScrollableEl;
-      }
+      // if (this._scrollableOffsetHasChanged()) {
+      //   let offsetToScrollableEl = this._getOffsetToScrollableEl();
+      //
+      //   this._updateChunksDataWith({
+      //     offsetDelta: offsetToScrollableEl - this._prevOffsetToScrollableEl
+      //   })
+      //
+      //   this._prevOffsetToScrollableEl = offsetToScrollableEl;
+      // }
 
       if (this._mode === APPEND_MODE) {
         this._updateContentWithAppend.apply(this, arguments);
@@ -434,19 +452,12 @@
 
         this._el.appendChild(chunkEl);
 
-        this._storeChunkData(chunkIndex, this._calculateChunkDataForReplacement(chunkEl));
+        this._storeChunkData(chunkIndex, this._calculateChunkData(chunkEl));
 
         this._visibles.push(chunkIndex);
       });
 
       this._addFillerTo(this._el, postFillerHeight);
-
-      this._updateScrollTop();
-      this._scrollableEl.focus();
-    }
-
-    _updateScrollTop () {
-      this._setScrollTop(this._scrollableEl.scrollTop);
     }
 
     _widthHasChanged () {
@@ -483,6 +494,10 @@
   }
 
   function getDomElement (el) {
+    if (!el) {
+      return null;
+    }
+
     if (typeof el === "string") {
       return document.querySelector(el);
     }
@@ -496,6 +511,23 @@
     }
 
     return null;
+  }
+
+  function delay (fn, treshold) {
+    var firedAt = Infinity;
+    var timer;
+
+    function delayedFn () {
+      fn.apply(null, arguments);
+    }
+
+    return function () {
+      if (timer !== undefined) {
+        clearTimeout(timer);
+      }
+
+      timer = setTimeout(delayedFn, treshold);
+    };
   }
 
   function throttle (func, wait, options) {
