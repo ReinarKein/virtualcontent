@@ -30,7 +30,7 @@
       this._chunkLenght       = options.length || DEFAULT_CHUNK_SIZE;
       this._mode              = options.append ? APPEND_MODE : REPLACE_MODE;
       this._threshold         = options.threshold || DEFAULT_THRESHOLD;
-      this._type              = options.type || TEXT_TYPE;
+      this._type              = options.type || HTML_TYPE;
       this._chunkPreProcessor = options.chunkPreProcessor || CHUNK_PREPROCESSOR;
       this._renderDelay       = options.delay || ONSCROLL_TIMEOUT;
 
@@ -414,9 +414,12 @@
 
       for (let i = first; i < last; i++) {
         let chunkEl = document.createElement("span");
+        let insertionMethod = this._type === "html" ?
+                                       "innerHTML" :
+                                       "textContent";
 
         chunkEl.dataset.chunkIndex  = i;
-        chunkEl.innerHTML           = this._preprocessChunk(this._chunks[i]);
+        chunkEl[insertionMethod]    = this._preprocessChunk(this._chunks[i]);
 
         this._el.appendChild(chunkEl);
 
@@ -442,12 +445,15 @@
         var chunkEl     = document.createElement("span");
         var chunkIndex  = chunkEl.dataset.chunkIndex = startOffset + i;
         var leftPad     = (!i && this._getChunkLeftPad(chunkIndex)) || 0;
+        let insertionMethod = this._type === "html" ?
+                                       "innerHTML" :
+                                       "textContent";
 
         content         = this._preprocessChunk(content);
 
         chunkEl.setAttribute("style", "position:relative; display:inline-block;");
 
-        chunkEl.innerHTML = `
+        chunkEl[insertionMethod] = `
           <span ${CHUNK_ATTR_START} style="display:inline-block;padding-left:${leftPad}px;"></span>
           <span>${content}</span>
         `;
