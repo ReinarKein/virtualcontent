@@ -30,7 +30,7 @@
       this._chunkLenght       = options.length || DEFAULT_CHUNK_SIZE;
       this._mode              = options.append ? APPEND_MODE : REPLACE_MODE;
       this._threshold         = options.threshold || DEFAULT_THRESHOLD;
-      this._type              = options.type || TEXT_TYPE;
+      this._contentType       = options.type || HTML_TYPE;
       this._chunkPreProcessor = options.chunkPreProcessor || CHUNK_PREPROCESSOR;
       this._renderDelay       = options.delay || ONSCROLL_TIMEOUT;
 
@@ -214,6 +214,10 @@
       return this._getScrollTop() - this._getOffsetToScrollableEl();
     }
 
+    isHtmlContent () {
+      return this._contentType === HTML_TYPE;
+    }
+
     _needUpdate (prevPointer, nextPointer) {
       var limit, visibles;
 
@@ -303,11 +307,36 @@
       this._scrollableEl.scrollTop = 0;
     }
 
-    // TODO: write setHtml method
-    setHtml (html) {
-      console.info(".setHtml() is not implemented yet, fall back to .setText()");
+    _setChunkElContent (chunkEl, content) {
+      if (this.isHtmlContent()) {
+        chunkEl.innerHTML = content;
+      } else {
+        chunkEl.textContent = content;
+      }
+    }
 
-      return this.setText.apply(this, arguments);
+    // TODO: write correct setHtml method (it's a workaround for now)
+    setHtml (html) {
+      console.info(".setHtml() is not fully implemented yet");
+
+      this._contentType = HTML_TYPE;
+      this._chunks      = this._splitString(html, this._chunkLenght);
+
+      this._pointer   = 0;
+      this._heights   = [];
+      this._leftpads  = [];
+      this._offsets   = [];
+      this._visibles  = [];
+
+      this._el.innerHTML = "";
+
+      this._scrollToTop();
+
+      if (this._el.parentNode) {
+        this._updateContent();
+      }
+
+      return this;
     }
 
     _setScrollTop (newValue) {
@@ -315,8 +344,8 @@
     }
 
     setText (str) {
-      this._type    = TEXT_TYPE;
-      this._chunks  = this._splitString(str, this._chunkLenght);
+      this._contentType = TEXT_TYPE;
+      this._chunks      = this._splitString(str, this._chunkLenght);
 
       this._pointer   = 0;
       this._heights   = [];
@@ -407,16 +436,17 @@
     }
 
     _updateContentWithAppend (prevPointer = 0, pointer = 0) {
-      var threshold   = this._threshold;
-      var first       = this._getLastVisible() + 1 || 0;
-      var last        = Math.min(pointer + threshold, this._chunks.length);
-      var offsets     = this._offsets;
+      var threshold       = this._threshold;
+      var first           = this._getLastVisible() + 1 || 0;
+      var last            = Math.min(pointer + threshold, this._chunks.length);
+      var offsets         = this._offsets;
 
       for (let i = first; i < last; i++) {
         let chunkEl = document.createElement("span");
 
         chunkEl.dataset.chunkIndex  = i;
-        chunkEl.innerHTML           = this._preprocessChunk(this._chunks[i]);
+
+        this._setChunkElContent(chunkEl, this._preprocessChunk(this._chunks[i]));
 
         this._el.appendChild(chunkEl);
 
@@ -442,15 +472,20 @@
         var chunkEl     = document.createElement("span");
         var chunkIndex  = chunkEl.dataset.chunkIndex = startOffset + i;
         var leftPad     = (!i && this._getChunkLeftPad(chunkIndex)) || 0;
+        var marker      = document.createElement("span");
 
-        content         = this._preprocessChunk(content);
+        marker.innerHTML = `
+          <span ${CHUNK_ATTR_START} style="display:inline-block;padding-left:${leftPad}px;"></span>
+        `;
+
+        marker  = marker.children[0];
+        content = this._preprocessChunk(content);
 
         chunkEl.setAttribute("style", "position:relative; display:inline-block;");
 
-        chunkEl.innerHTML = `
-          <span ${CHUNK_ATTR_START} style="display:inline-block;padding-left:${leftPad}px;"></span>
-          <span>${content}</span>
-        `;
+        this._setChunkElContent(chunkEl, content)
+
+        chunkEl.insertBefore(marker, chunkEl.children[0]);
 
         this._el.appendChild(chunkEl);
 
