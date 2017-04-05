@@ -1,6 +1,6 @@
 {
   "name": "virtualcontent",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "A JS browser tool designed for handling large text/html content",
   "main": "src/virtual_content.js",
   "scripts": {

@@ -311,6 +311,7 @@
       if (this.isHtmlContent()) {
         chunkEl.innerHTML = content;
       } else {
+        chunkEl.style["white-space"] = "pre-wrap"
         chunkEl.textContent = content;
       }
     }
