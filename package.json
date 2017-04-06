@@ -2,8 +2,9 @@
   "name": "virtualcontent",
   "version": "0.1.5",
   "description": "A JS browser tool designed for handling large text/html content",
-  "main": "src/virtual_content.js",
+  "main": "dist/virtualcontent.js",
   "scripts": {
+    "build": "webpack",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -23,5 +24,12 @@
   "bugs": {
     "url": "https://github.com/vkrepkiy/virtualcontent/issues"
   },
-  "homepage": "https://github.com/vkrepkiy/virtualcontent#readme"
+  "homepage": "https://github.com/vkrepkiy/virtualcontent#readme",
+  "devDependencies": {
+    "babel-core": "^6.24.0",
+    "babel-loader": "^6.4.1",
+    "babel-preset-env": "^1.3.2",
+    "babel-register": "^6.24.0",
+    "webpack": "^2.3.3"
+  }
 }
