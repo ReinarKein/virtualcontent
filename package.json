@@ -34,6 +34,7 @@
     "jasmine-core": "^2.5.2",
     "karma": "^1.6.0",
     "karma-jasmine": "^1.1.0",
+    "karma-nyan-reporter": "^0.2.5",
     "karma-phantomjs-launcher": "^1.0.4",
     "karma-sourcemap-loader": "^0.3.7",
     "karma-webpack": "^2.0.3",
