@@ -13,12 +13,18 @@ module.exports = {
   },
 
   output: {
-    filename: 'virtualcontent.js',
-    path: path.resolve(__dirname, 'dist')
+    filename      : 'virtualcontent.js',
+    library       : "VC",
+    libraryTarget : "umd",
+    path          : path.resolve(__dirname, 'dist')
   },
 
   plugins:[
-    new webpack.optimize.UglifyJsPlugin()
-  ],
+    new webpack.optimize.UglifyJsPlugin({
+      mangle: {
+        except: ["VirtualContent"]
+      }
+    })
+  ]
 
 };

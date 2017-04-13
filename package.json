@@ -1,11 +1,11 @@
 {
   "name": "virtualcontent",
-  "version": "0.1.6",
+  "version": "0.2.0",
   "description": "A JS browser tool designed for handling large text/html content",
   "main": "dist/virtualcontent.js",
   "scripts": {
     "build": "webpack",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "$(npm bin)/karma start karma.conf.js"
   },
   "repository": {
     "type": "git",
@@ -28,8 +28,15 @@
   "devDependencies": {
     "babel-core": "^6.24.0",
     "babel-loader": "^6.4.1",
-    "babel-preset-env": "^1.3.2",
+    "babel-polyfill": "^6.23.0",
+    "babel-preset-env": "^1.3.3",
     "babel-register": "^6.24.0",
+    "jasmine-core": "^2.5.2",
+    "karma": "^1.6.0",
+    "karma-jasmine": "^1.1.0",
+    "karma-phantomjs-launcher": "^1.0.4",
+    "karma-sourcemap-loader": "^0.3.7",
+    "karma-webpack": "^2.0.3",
     "webpack": "^2.3.3"
   }
 }
