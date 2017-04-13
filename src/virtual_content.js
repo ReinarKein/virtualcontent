@@ -320,6 +320,8 @@
     setHtml (html) {
       console.info(".setHtml() is not fully implemented yet");
 
+      html = this._validateString(html);
+
       this._contentType = HTML_TYPE;
       this._chunks      = this._splitString(html, this._chunkLenght);
 
@@ -345,6 +347,8 @@
     }
 
     setText (str) {
+      str = this._validateString(str);
+
       this._contentType = TEXT_TYPE;
       this._chunks      = this._splitString(str, this._chunkLenght);
 
@@ -496,6 +500,22 @@
       });
 
       this._addFillerTo(this._el, postFillerHeight);
+    }
+
+    _validateString (str) {
+      if (typeof str === "string") {
+        return str;
+      }
+
+      if (typeof str === "number" && !isNaN(str)) {
+        return `${str}`;
+      }
+
+      if (!str) {
+        return "";
+      }
+
+      throw new TypeError("Not a string");
     }
 
     _widthHasChanged () {
