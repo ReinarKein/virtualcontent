@@ -284,6 +284,10 @@
     }
 
     renderTo (el) {
+      if (!el) {
+        throw TypeError("Unsupported element");
+      }
+
       if (isJqueryEl(el)) {
         el = el[0];
       }
@@ -318,8 +322,6 @@
 
     // TODO: write correct setHtml method (it's a workaround for now)
     setHtml (html) {
-      console.info(".setHtml() is not fully implemented yet");
-
       html = this._validateString(html);
 
       this._contentType = HTML_TYPE;

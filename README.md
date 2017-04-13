@@ -4,7 +4,7 @@
 
 ## Installation
 ```javascript
-npm i --save-dev virtualcontent
+npm i --save virtualcontent
 ```
 
 ## Usage

@@ -8,8 +8,10 @@ describe("Virtual Content JS", function () {
     vc = VC.create();
   });
 
-  it("Initialises properly", function () {
-    expect(vc instanceof VC).toBe(true);
+  describe("Static methods:", function () {
+    it(".create() works", function () {
+      expect(vc instanceof VC).toBe(true);
+    });
   });
 
   describe("Public methods:", function () {
@@ -46,6 +48,10 @@ describe("Virtual Content JS", function () {
       expect(passArray).toThrow();
     });
 
+    it(".setText() returns self", function () {
+      expect(vc.setText()).toBe(vc);
+    });
+
 
     it(".setHtml() accepts String", function () {
       const TEXT = "Text content";
@@ -80,6 +86,10 @@ describe("Virtual Content JS", function () {
       expect(passArray).toThrow();
     });
 
+    it(".setHtml() returns self", function () {
+      expect(vc.setHtml()).toBe(vc);
+    });
+
 
     it(".isHtmlContent() works", function () {
       vc.setText("");
@@ -97,7 +107,57 @@ describe("Virtual Content JS", function () {
       vc.setText(TEXT);
       vc.renderTo(el);
 
+      expect(vc._el.parentNode).toBe(el);
       expect(el.textContent).toContain(TEXT);
+    });
+
+    it(".renderTo() accepts DOM Element or jQueryEl", function () {
+      var el = document.createElement("div");
+      var $el = {0: document.createElement("div"), length: 1, jquery: "2.1.1"};
+
+      vc.setText("text");
+
+      vc.renderTo(el);
+      expect(vc._el.parentNode).toBe(el);
+
+      vc.renderTo($el);
+      expect(vc._el.parentNode).toBe($el[0]);
+    });
+
+    it(".renderTo() throws with unsupported argument", function () {
+      function failOnNull () {
+        vc.renderTo(null);
+      }
+
+      function failOnUndefined () {
+        vc.renderTo(undefined);
+      }
+
+      function failOnObject () {
+        vc.renderTo({0: "some data"});
+      }
+
+      expect(failOnNull).toThrow();
+      expect(failOnUndefined).toThrow();
+      expect(failOnObject).toThrow();
+    });
+
+    it(".renderTo() returns self", function () {
+      expect(vc.renderTo(document.createElement("div"))).toBe(vc);
+    });
+
+
+    it(".destroy() works", function () {
+      var el = document.createElement("div");
+
+      vc.setText("random").renderTo(el);
+
+      vc.destroy();
+
+      expect(vc._scrollableEl).toBe(null);
+      expect(vc._el.parentNode).toBe(null);
+      expect(VC.instances.indexOf(vc)).toBe(-1);
+      expect(el.children.length).toBe(0);
     });
   });
 
