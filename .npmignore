@@ -1,4 +1,7 @@
 .babelrc
+.jshintrc
+.nvmrc
 karma.conf.js
 webpack.config.js
-.nvmrc
+spec/
+src/
