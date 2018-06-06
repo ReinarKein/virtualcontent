@@ -46,7 +46,7 @@
       this._scrollableEl    = getDomElement(options.scrollableParent) || this._el;
       this._visibles        = [];
 
-      this._el.setAttribute("style", "height:100%;overflow:auto;position:relative;word-break:break-word;");
+      this._el.setAttribute("style", "overflow:auto;position:relative;word-break:break-word;");
       this._scrollableEl.setAttribute("tabindex", 0);
 
       this._scrollableEl.style.outline = "0px";
