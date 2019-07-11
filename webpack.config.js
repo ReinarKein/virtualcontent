@@ -1,30 +1,26 @@
 var path    = require('path');
-var webpack = require('webpack');
 
 module.exports = {
-  devtool : false,
-
   entry   : './src/virtual_content.js',
-
   module: {
     rules: [
-      { test: /\.js$/, exclude: /node_modules/, loader: "babel-loader" }
+      {
+        test: /\.js$/,
+        exclude: /node_modules/,
+        use: {
+          loader: 'babel-loader',
+            options: {
+              presets: ['@babel/preset-env']
+            }
+        }
+      }
     ]
   },
-
   output: {
     filename      : 'virtualcontent.js',
     library       : "VC",
     libraryTarget : "umd",
     path          : path.resolve(__dirname, 'dist')
-  },
-
-  plugins:[
-    new webpack.optimize.UglifyJsPlugin({
-      mangle: {
-        except: ["VirtualContent"]
-      }
-    })
-  ]
+  }
 
 };

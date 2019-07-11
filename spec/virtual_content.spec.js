@@ -1,8 +1,8 @@
-require("babel-polyfill");
+
+const VC = require("../src/virtual_content.js");
 
 describe("Virtual Content JS", function () {
-  var VC = require("../src/virtual_content.js");
-  var vc;
+  let vc;
 
   beforeEach(function() {
     vc = VC.create();
@@ -41,8 +41,8 @@ describe("Virtual Content JS", function () {
     });
 
     it(".setText() throws when Object or Array are passed", function () {
-      var passObject = function () {vc.setText({});};
-      var passArray  = function () {vc.setText([]);};
+      let passObject = function () {vc.setText({});};
+      let passArray  = function () {vc.setText([]);};
 
       expect(passObject).toThrow();
       expect(passArray).toThrow();
@@ -79,8 +79,8 @@ describe("Virtual Content JS", function () {
     });
 
     it(".setHtml() throws when Object or Array are passed", function () {
-      var passObject = function () {vc.setHtml({});};
-      var passArray  = function () {vc.setHtml([]);};
+      let passObject = function () {vc.setHtml({});};
+      let passArray  = function () {vc.setHtml([]);};
 
       expect(passObject).toThrow();
       expect(passArray).toThrow();
@@ -102,7 +102,7 @@ describe("Virtual Content JS", function () {
 
     it(".renderTo() works", function () {
       const TEXT  = "Text content";
-      var el      = document.createElement("div");
+      let el      = document.createElement("div");
 
       vc.setText(TEXT);
       vc.renderTo(el);
@@ -112,8 +112,8 @@ describe("Virtual Content JS", function () {
     });
 
     it(".renderTo() accepts DOM Element or jQueryEl", function () {
-      var el = document.createElement("div");
-      var $el = {0: document.createElement("div"), length: 1, jquery: "2.1.1"};
+      let el = document.createElement("div");
+      let $el = {0: document.createElement("div"), length: 1, jquery: "2.1.1"};
 
       vc.setText("text");
 
@@ -148,7 +148,7 @@ describe("Virtual Content JS", function () {
 
 
     it(".destroy() works", function () {
-      var el = document.createElement("div");
+      let el = document.createElement("div");
 
       vc.setText("random").renderTo(el);
 
@@ -165,8 +165,8 @@ describe("Virtual Content JS", function () {
     it("._splitString(str, chunkSize) works", function () {
       const length    = 9999;
       const chunkSize = 100;
-      var str         = Array(9999).fill("s").join("");
-      var chunks      = vc._splitString(str, chunkSize);
+      let str         = Array(9999).fill("s").join("");
+      let chunks      = vc._splitString(str, chunkSize);
 
       expect(chunks.length).toBe(Math.ceil(length/chunkSize));
       expect(chunks.every(function(chunk) {return chunk.length <= chunkSize})).toBe(true);
