@@ -1,7 +1,7 @@
 var path = require('path');
 
 module.exports = {
-  entry: './src/virtual_content.ts',
+  entry: './src/main.ts',
   resolve: {
     extensions: ['.ts', '.js'],
   },

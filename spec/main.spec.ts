@@ -1,4 +1,4 @@
-import { VirtualContent as VC } from '../src/virtual_content';
+import { VirtualContent as VC } from '../src/main';
 
 describe('Virtual Content JS', function () {
   let vc;
