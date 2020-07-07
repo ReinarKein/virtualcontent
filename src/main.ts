@@ -437,17 +437,17 @@ export class VirtualContent {
       /**
        * Check whether it's better to move tag to this chunk or to the next
        */
-      const nextChunkCloseTag = chunks[i + 1].lastIndexOf('>');
+      const nextChunkCloseTag = chunks[i + 1].lastIndexOf('>') + 1;
 
       /**
        * Check where most of the tag is placed and move all it's parts there
        */
-      if (nextChunkCloseTag > chunkLength - openTag) {
-        chunks[i + 1] = chunks[i].slice(openTag + 1) + chunks[i + 1];
-        chunks[i] = chunks[i].slice(0, openTag + 1);
+      if (nextChunkCloseTag > chunks[i].length - openTag) {
+        chunks[i + 1] = chunks[i].slice(openTag) + chunks[i + 1];
+        chunks[i] = chunks[i].slice(0, openTag);
       } else {
-        chunks[i] = chunks[i] + chunks[i + 1].slice(0, nextChunkCloseTag + 1);
-        chunks[i + 1] = chunks[i + 1].slice(nextChunkCloseTag + 1);
+        chunks[i] = chunks[i] + chunks[i + 1].slice(0, nextChunkCloseTag);
+        chunks[i + 1] = chunks[i + 1].slice(nextChunkCloseTag);
       }
     }
 
