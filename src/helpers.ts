@@ -26,7 +26,7 @@ export function getDomElement(el) {
   return null;
 }
 
-export function delay(fn, treshold) {
+export function delay(fn, threshold) {
   var firedAt = Infinity;
   var timer;
 
@@ -39,7 +39,7 @@ export function delay(fn, treshold) {
       clearTimeout(timer);
     }
 
-    timer = setTimeout(delayedFn, treshold);
+    timer = setTimeout(delayedFn, threshold);
   };
 }
 

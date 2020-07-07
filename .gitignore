@@ -2,3 +2,6 @@ demo
 node_modules
 tsc-out
 dist
+.history
+.vscode
+/*.tgz

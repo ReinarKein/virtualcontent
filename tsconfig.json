@@ -1,12 +1,11 @@
 {
   "compilerOptions": {
-    "baseUrl": "src",
-    "outDir": "./dist/tsc-out",
     "declaration": true,
     "declarationDir": "./dist",
+    "outDir": "./dist/tsc-out",
     "module": "ESNext",
     "target": "ESNext",
     "sourceMap": true
   },
-  "include": ["src/main.ts"]
+  "files": ["src/main.ts"]
 }

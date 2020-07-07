@@ -5,8 +5,8 @@
   "main": "dist/virtualcontent.js",
   "types": "dist/main.d.ts",
   "scripts": {
-    "prepack": "npm run build",
-    "build": "rm -rf dist && webpack --mode=production && tsc --emitDeclarationOnly",
+    "prepublishOnly": "npm run test && npm run build",
+    "build": "rm -rf dist && webpack --mode=production && tsc -p tsconfig-declaration.json --emitDeclarationOnly",
     "test": "jest"
   },
   "repository": {

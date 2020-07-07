@@ -1,5 +1,7 @@
 import { VirtualContent } from '../src/main';
 
+const chunkLength = 10240;
+
 type VC = {
   [K in keyof VirtualContent]: VirtualContent[K];
 } & {
@@ -13,7 +15,9 @@ describe('Virtual Content JS', function () {
   let vc: VC;
 
   beforeEach(function () {
-    vc = (VirtualContent.create() as unknown) as VC;
+    vc = (VirtualContent.create({
+      chunkSize: chunkLength,
+    }) as unknown) as VC;
   });
 
   describe('Static methods:', function () {
@@ -192,6 +196,52 @@ describe('Virtual Content JS', function () {
           return chunk.length <= chunkSize;
         }),
       ).toBe(true);
+    });
+  });
+
+  describe('Parsing HTML', () => {
+    it('.setHtml does not break single tag apart', () => {
+      /**
+       * Html string that should not be split
+       */
+      const htmlString = '<a href="/some/url" class="html string"></a>';
+
+      /**
+       * String of chunk size - 1/2 htmlString length
+       */
+      const chunkString = new Array(
+        chunkLength - Math.ceil(htmlString.length / 2),
+      )
+        .fill(null)
+        .map((_) => '_')
+        .join('');
+
+      /**
+       * This is the html string to be processed (2 chunks length)
+       */
+      const content = `${chunkString}${htmlString}${chunkString}`;
+
+      /**
+       * String + html + string - 2 chunks with html between
+       */
+      vc.setHtml(`${chunkString}${htmlString}${chunkString}`);
+
+      /**
+       * Check that test was written correctly
+       */
+      expect(vc.chunks.length).toBe(2);
+
+      /**
+       * Check that we have html string split correctly
+       */
+      expect(
+        vc.chunks[0].includes(htmlString) || vc.chunks[1].includes(htmlString),
+      ).toBeTruthy();
+
+      /**
+       * Check that split was done correct and we have same content
+       */
+      expect(vc.chunks.join('')).toBe(content);
     });
   });
 });
