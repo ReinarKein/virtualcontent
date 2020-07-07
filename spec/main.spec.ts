@@ -1,15 +1,24 @@
-import { VirtualContent as VC } from '../src/main';
+import { VirtualContent } from '../src/main';
+
+type VC = {
+  [K in keyof VirtualContent]: VirtualContent[K];
+} & {
+  chunks: VirtualContent['chunks'];
+  el: VirtualContent['el'];
+  scrollableEl: VirtualContent['scrollableEl'];
+  splitString: VirtualContent['splitString'];
+};
 
 describe('Virtual Content JS', function () {
-  let vc;
+  let vc: VC;
 
   beforeEach(function () {
-    vc = VC.create();
+    vc = (VirtualContent.create() as unknown) as VC;
   });
 
   describe('Static methods:', function () {
     it('.create() works', function () {
-      expect(vc instanceof VC).toBe(true);
+      expect((vc as any) instanceof VirtualContent).toBe(true);
     });
   });
 
@@ -24,7 +33,7 @@ describe('Virtual Content JS', function () {
     it('.setText() accepts Number', function () {
       const NUMBER = 9999;
 
-      vc.setText(NUMBER);
+      vc.setText(NUMBER as any);
       expect(vc.chunks.join('')).toBe(`${NUMBER}`);
     });
 
@@ -35,16 +44,16 @@ describe('Virtual Content JS', function () {
       vc.setText(null);
       expect(vc.chunks.join('')).toBe('');
 
-      vc.setText(NaN);
+      vc.setText(NaN as any);
       expect(vc.chunks.join('')).toBe('');
     });
 
     it('.setText() throws when Object or Array are passed', function () {
       let passObject = function () {
-        vc.setText({});
+        vc.setText({} as any);
       };
       let passArray = function () {
-        vc.setText([]);
+        vc.setText([] as any);
       };
 
       expect(passObject).toThrow();
@@ -65,7 +74,7 @@ describe('Virtual Content JS', function () {
     it('.setHtml() accepts Number', function () {
       const NUMBER = 9999;
 
-      vc.setHtml(NUMBER);
+      vc.setHtml(NUMBER as any);
       expect(vc.chunks.join('')).toBe(`${NUMBER}`);
     });
 
@@ -76,16 +85,16 @@ describe('Virtual Content JS', function () {
       vc.setHtml(null);
       expect(vc.chunks.join('')).toBe('');
 
-      vc.setHtml(NaN);
+      vc.setHtml(NaN as any);
       expect(vc.chunks.join('')).toBe('');
     });
 
     it('.setHtml() throws when Object or Array are passed', function () {
       let passObject = function () {
-        vc.setHtml({});
+        vc.setHtml({} as any);
       };
       let passArray = function () {
-        vc.setHtml([]);
+        vc.setHtml([] as any);
       };
 
       expect(passObject).toThrow();
@@ -163,7 +172,9 @@ describe('Virtual Content JS', function () {
 
       expect(vc.scrollableEl).toBe(null);
       expect(vc.el.parentNode).toBe(null);
-      expect(VC.instances.indexOf(vc)).toBe(-1);
+      expect(
+        VirtualContent.instances.indexOf((vc as unknown) as VirtualContent),
+      ).toBe(-1);
       expect(el.children.length).toBe(0);
     });
   });

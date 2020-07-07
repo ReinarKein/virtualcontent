@@ -349,7 +349,7 @@ export class VirtualContent {
   }
 
   // TODO: write correct setHtml method (it's a workaround for now)
-  public setHtml(html) {
+  public setHtml(html?: string) {
     html = this.validateString(html);
 
     this.contentType = HTML_TYPE;
@@ -376,7 +376,7 @@ export class VirtualContent {
     this.scrollableEl.scrollTop = newValue;
   }
 
-  public setText(str) {
+  public setText(str: string = '') {
     str = this.validateString(str);
 
     this.contentType = TEXT_TYPE;
