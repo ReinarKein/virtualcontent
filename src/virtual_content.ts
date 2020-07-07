@@ -83,7 +83,7 @@ export class VirtualContent {
     }
   }
 
-  static create(options) {
+  static create(options?) {
     return new VirtualContent(options);
   }
 
