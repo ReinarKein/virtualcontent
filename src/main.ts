@@ -11,7 +11,7 @@ const CHUNK_PREPROCESSOR = null;
 const CHUNK_ATTR_START = "data-chunk-role='start'";
 
 export class VirtualContent {
-  private chunkLenght: number;
+  private chunkLength: number;
   private mode: typeof APPEND_MODE | typeof REPLACE_MODE;
   private threshold: number;
   private contentType: typeof HTML_TYPE | typeof TEXT_TYPE;
@@ -21,12 +21,12 @@ export class VirtualContent {
   private el: HTMLDivElement;
   private heights: number[];
   private lastWidth: number;
-  private leftpads: number[];
+  private leftPads: number[];
   private offsets: number[];
   private pointer: number;
   private prevOffsetToScrollableEl: number;
   private scrollableEl: HTMLElement;
-  private visibles: number[];
+  private visibleIndexes: number[];
 
   public static trackInstances: boolean = false;
   public static instances: VirtualContent[] = [];
@@ -49,7 +49,7 @@ export class VirtualContent {
   public static _instanceTrackerTimer: any;
 
   constructor(options: any = {}) {
-    this.chunkLenght = options.length || DEFAULT_CHUNK_SIZE;
+    this.chunkLength = options.length || DEFAULT_CHUNK_SIZE;
     this.mode = options.append ? APPEND_MODE : REPLACE_MODE;
     this.threshold = options.threshold || DEFAULT_THRESHOLD;
     this.contentType = options.type || HTML_TYPE;
@@ -60,13 +60,13 @@ export class VirtualContent {
     this.el = document.createElement('div');
     this.heights = [];
     this.lastWidth = null;
-    this.leftpads = [];
+    this.leftPads = [];
     this.offsets = [];
     this.onScroll = delay(this.onScroll.bind(this), this.renderDelay);
     this.pointer = 0;
     this.prevOffsetToScrollableEl = 0;
     this.scrollableEl = getDomElement(options.scrollableParent) || this.el;
-    this.visibles = [];
+    this.visibleIndexes = [];
 
     this.el.setAttribute(
       'style',
@@ -113,8 +113,8 @@ export class VirtualContent {
     this.el.innerHTML = null;
     this.chunks = null;
     this.heights = null;
-    this.visibles = null;
-    this.leftpads = null;
+    this.visibleIndexes = null;
+    this.leftPads = null;
     this.scrollableEl = null;
 
     if (parentNode) {
@@ -150,7 +150,7 @@ export class VirtualContent {
   }
 
   private getChunkLeftPad(chunkIndex) {
-    return this.leftpads[chunkIndex] || 0;
+    return this.leftPads[chunkIndex] || 0;
   }
 
   private getChunkOffsetTop(chunkIndex) {
@@ -183,9 +183,9 @@ export class VirtualContent {
     var min = 0;
     var max = this.chunks.length;
 
-    var treshold = this.threshold;
-    var startOffset = pointer - treshold;
-    var endOffset = pointer + treshold;
+    var threshold = this.threshold;
+    var startOffset = pointer - threshold;
+    var endOffset = pointer + threshold;
 
     if (startOffset < min && endOffset > max) {
       return [min, max];
@@ -217,9 +217,9 @@ export class VirtualContent {
   }
 
   private getLastVisible() {
-    var length = this.visibles.length;
+    var length = this.visibleIndexes.length;
 
-    return length ? this.visibles[--length] : -1;
+    return length ? this.visibleIndexes[--length] : -1;
   }
 
   private getOffsetToScrollableEl() {
@@ -247,7 +247,7 @@ export class VirtualContent {
   }
 
   private needUpdate(prevPointer, nextPointer) {
-    var limit, visibles;
+    var limit, visibleIndexes;
 
     if (this.mode === REPLACE_MODE) {
       let prev, next;
@@ -262,11 +262,11 @@ export class VirtualContent {
       return prev[0] !== next[0] || prev[1] !== next[1];
     }
 
-    visibles = this.visibles;
+    visibleIndexes = this.visibleIndexes;
     limit = Math.min(nextPointer + this.threshold, this.chunks.length);
 
     for (; nextPointer < limit; nextPointer++) {
-      if (visibles.indexOf(nextPointer) === -1) {
+      if (visibleIndexes.indexOf(nextPointer) === -1) {
         return true;
       }
     }
@@ -353,13 +353,13 @@ export class VirtualContent {
     html = this.validateString(html);
 
     this.contentType = HTML_TYPE;
-    this.chunks = this.splitString(html, this.chunkLenght);
+    this.chunks = this.splitString(html, this.chunkLength);
 
     this.pointer = 0;
     this.heights = [];
-    this.leftpads = [];
+    this.leftPads = [];
     this.offsets = [];
-    this.visibles = [];
+    this.visibleIndexes = [];
 
     this.el.innerHTML = '';
 
@@ -380,13 +380,13 @@ export class VirtualContent {
     str = this.validateString(str);
 
     this.contentType = TEXT_TYPE;
-    this.chunks = this.splitString(str, this.chunkLenght);
+    this.chunks = this.splitString(str, this.chunkLength);
 
     this.pointer = 0;
     this.heights = [];
-    this.leftpads = [];
+    this.leftPads = [];
     this.offsets = [];
-    this.visibles = [];
+    this.visibleIndexes = [];
 
     this.el.innerHTML = '';
 
@@ -431,8 +431,8 @@ export class VirtualContent {
       this.heights[chunkIndex] = offsetHeight;
     }
 
-    if (typeof leftPad === 'number' && !this.leftpads[chunkIndex]) {
-      this.leftpads[chunkIndex] = leftPad;
+    if (typeof leftPad === 'number' && !this.leftPads[chunkIndex]) {
+      this.leftPads[chunkIndex] = leftPad;
     }
   }
 
@@ -491,7 +491,7 @@ export class VirtualContent {
 
       offsets[i] = chunkEl.offsetTop;
 
-      this.visibles.push(i);
+      this.visibleIndexes.push(i);
     }
   }
 
@@ -503,7 +503,7 @@ export class VirtualContent {
     var postFillerHeight = this.getBottomFillerHeightFor(endOffset);
 
     this.el.innerHTML = '';
-    this.visibles = [];
+    this.visibleIndexes = [];
 
     this.addFillerTo(this.el, preFillerHeight);
 
@@ -530,7 +530,7 @@ export class VirtualContent {
 
       this.storeChunkData(chunkIndex, this.calculateChunkData(chunkEl));
 
-      this.visibles.push(parseInt(chunkIndex, 10));
+      this.visibleIndexes.push(parseInt(chunkIndex, 10));
     });
 
     this.addFillerTo(this.el, postFillerHeight);
