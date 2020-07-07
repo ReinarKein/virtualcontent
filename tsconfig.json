@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "outDir": "./dist/tsc-out",
+    "declaration": true,
+    "declarationDir": "./dist",
+    "module": "ESNext",
+    "target": "ESNext",
+    "sourceMap": true
+  }
+}

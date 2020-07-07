@@ -1,7 +1,10 @@
 .babelrc
+.browserslistrc
 .jshintrc
 .nvmrc
-karma.conf.js
+.prettierrc.js
 webpack.config.js
+tsconfig.json
 spec/
 src/
+!dist

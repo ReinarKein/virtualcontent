@@ -1,26 +1,23 @@
-var path    = require('path');
+var path = require('path');
 
 module.exports = {
-  entry   : './src/virtual_content.js',
+  entry: './src/virtual_content.ts',
+  resolve: {
+    extensions: ['.ts', '.js'],
+  },
   module: {
     rules: [
       {
-        test: /\.js$/,
+        test: /\.ts$/,
+        use: ['babel-loader', 'ts-loader'],
         exclude: /node_modules/,
-        use: {
-          loader: 'babel-loader',
-            options: {
-              presets: ['@babel/preset-env']
-            }
-        }
-      }
-    ]
+      },
+    ],
   },
   output: {
-    filename      : 'virtualcontent.js',
-    library       : "VC",
-    libraryTarget : "umd",
-    path          : path.resolve(__dirname, 'dist')
-  }
-
+    filename: 'virtualcontent.js',
+    library: 'VC',
+    libraryTarget: 'umd',
+    path: path.resolve(__dirname, 'dist'),
+  },
 };
