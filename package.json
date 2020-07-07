@@ -1,6 +1,6 @@
 {
   "name": "virtualcontent",
-  "version": "1.0.0-next.1",
+  "version": "1.0.0",
   "description": "Browser tool designed for lazy rendering large text/html content",
   "main": "dist/virtualcontent.js",
   "types": "dist/main.d.ts",
