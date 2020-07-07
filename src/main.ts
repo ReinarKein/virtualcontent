@@ -10,6 +10,16 @@ const DEFAULT_THRESHOLD = 2;
 const CHUNK_PREPROCESSOR = null;
 const CHUNK_ATTR_START = "data-chunk-role='start'";
 
+export interface VirtualContentOptions {
+  chunkSize?: number;
+  append?: boolean;
+  threshold?: number;
+  type?: typeof HTML_TYPE | typeof TEXT_TYPE;
+  chunkPreProcessor?: any;
+  scrollEventThrottle?: number;
+  scrollableParent?: HTMLElement;
+}
+
 export class VirtualContent {
   private chunkLength: number;
   private mode: typeof APPEND_MODE | typeof REPLACE_MODE;
@@ -17,7 +27,7 @@ export class VirtualContent {
   private contentType: typeof HTML_TYPE | typeof TEXT_TYPE;
   private chunkPreProcessor: any;
   private renderDelay: any;
-  private chunks: Element[];
+  private chunks: string[];
   private el: HTMLDivElement;
   private heights: number[];
   private lastWidth: number;
@@ -48,13 +58,13 @@ export class VirtualContent {
   }
   public static _instanceTrackerTimer: any;
 
-  constructor(options: any = {}) {
-    this.chunkLength = options.length || DEFAULT_CHUNK_SIZE;
+  constructor(options: VirtualContentOptions = {}) {
+    this.chunkLength = options.chunkSize || DEFAULT_CHUNK_SIZE;
     this.mode = options.append ? APPEND_MODE : REPLACE_MODE;
     this.threshold = options.threshold || DEFAULT_THRESHOLD;
     this.contentType = options.type || HTML_TYPE;
     this.chunkPreProcessor = options.chunkPreProcessor || CHUNK_PREPROCESSOR;
-    this.renderDelay = options.delay || ONSCROLL_TIMEOUT;
+    this.renderDelay = options.scrollEventThrottle || ONSCROLL_TIMEOUT;
 
     this.chunks = [];
     this.el = document.createElement('div');
@@ -83,7 +93,7 @@ export class VirtualContent {
     }
   }
 
-  static create(options?) {
+  static create(options: VirtualContentOptions = {}) {
     return new VirtualContent(options);
   }
 
@@ -353,7 +363,7 @@ export class VirtualContent {
     html = this.validateString(html);
 
     this.contentType = HTML_TYPE;
-    this.chunks = this.splitString(html, this.chunkLength);
+    this.chunks = this.splitHtml(html, this.chunkLength);
 
     this.pointer = 0;
     this.heights = [];
@@ -399,16 +409,50 @@ export class VirtualContent {
     return this;
   }
 
-  private splitString(str, length) {
-    return new Array(Math.ceil(str.length / length))
+  private splitString(str: string, chunkLength: number): string[] {
+    return new Array(Math.ceil(str.length / chunkLength))
       .fill(null)
       .map(function (val, i) {
-        var offset = i * length;
-        return str.substring(offset, offset + length);
+        var offset = i * chunkLength;
+        return str.substring(offset, offset + chunkLength);
       });
   }
 
-  private splitHtml(str, length) {}
+  private splitHtml(str, chunkLength) {
+    const chunks: string[] = this.splitString(str, chunkLength);
+
+    for (let i = 0; i < chunks.length; i++) {
+      const openTag = chunks[i].lastIndexOf('<');
+      const closeTag = chunks[i].lastIndexOf('>');
+      const unclosedTagFound = openTag > closeTag;
+      const lastChunk = !chunks[i + 1];
+
+      /**
+       * Leave chunk as it is if no tag violations found
+       */
+      if (!unclosedTagFound || lastChunk) {
+        continue;
+      }
+
+      /**
+       * Check whether it's better to move tag to this chunk or to the next
+       */
+      const nextChunkCloseTag = chunks[i + 1].lastIndexOf('>');
+
+      /**
+       * Check where most of the tag is placed and move all it's parts there
+       */
+      if (nextChunkCloseTag > chunkLength - openTag) {
+        chunks[i + 1] = chunks[i].slice(openTag + 1) + chunks[i + 1];
+        chunks[i] = chunks[i].slice(0, openTag + 1);
+      } else {
+        chunks[i] = chunks[i] + chunks[i + 1].slice(0, nextChunkCloseTag + 1);
+        chunks[i + 1] = chunks[i + 1].slice(nextChunkCloseTag + 1);
+      }
+    }
+
+    return chunks;
+  }
 
   private startScrollTracking() {
     this.scrollableEl.style.overflow = 'auto';

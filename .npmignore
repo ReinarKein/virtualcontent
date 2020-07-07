@@ -1,3 +1,5 @@
+.vscode
+.history
 .babelrc
 .browserslistrc
 .jshintrc
@@ -5,6 +7,9 @@
 .prettierrc.js
 webpack.config.js
 tsconfig.json
+tsconfig-declaration.json
+jest.config.js
 spec/
 src/
 !dist
+/*.tgz
